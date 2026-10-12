@@ -2,6 +2,7 @@ import mujoco
 import mujoco.viewer
 import time
 import numpy as np
+import os
 
 '''
 Different tasks is a valuable thing: we want expressivity, yes, but more than
@@ -85,8 +86,13 @@ def bez_sim(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4,
             left=1, right=2, orient=1, loss=0, 
             display=False, printy=False, friction=0.3):
 
+
+    model = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model', 'origami', 'origami_robot.xml')
+    with open(model, 'r') as file:
+        xml = file.read()
+
     # import model
-    model = mujoco.MjModel.from_xml_path(r'model\origami\origami_robot.xml')
+    model = mujoco.MjModel.from_xml_string(xml)
     data = mujoco.MjData(model)
 
     # altered friction

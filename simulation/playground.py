@@ -1,10 +1,28 @@
 import mujoco
 import mujoco.viewer
-import keyboard     # if keyboard.is_pressed('w'):
+from pynput import keyboard     # the 'keyboard' package crashes on macOS
+import os
 import time
 
+# track held keys so is_pressed() works like the old keyboard.is_pressed()
+pressed = set()
+
+def on_press(key):
+    if getattr(key, 'char', None):
+        pressed.add(key.char)
+
+def on_release(key):
+    if getattr(key, 'char', None):
+        pressed.discard(key.char)
+
+def is_pressed(key):
+    return key in pressed
+
+keyboard.Listener(on_press=on_press, on_release=on_release).start()
+
 # Load model
-with open(r'model\origami\origami_robot.xml', 'r') as file:
+xml_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model', 'origami', 'origami_robot.xml')
+with open(xml_path, 'r') as file:
     xml = file.read()
 
 model = mujoco.MjModel.from_xml_string(xml)
@@ -33,42 +51,42 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         # if you want to change your selection, press '-' once, then pick from your sets again.
         # you won't be able to move until you've pressed one button from either set, after a reset.
 
-        if keyboard.is_pressed('2') and left:   # l_top
+        if is_pressed('2') and left:   # l_top
             left = False
             key_bindings['2'] = [(0, +STEP)]
             key_bindings['3'] = [(0, -STEP)]
 
-        if keyboard.is_pressed('3') and left:   # r_top
+        if is_pressed('3') and left:   # r_top
             left = False
             key_bindings['2'] = [(1, +STEP)]
             key_bindings['3'] = [(1, -STEP)]
 
-        if keyboard.is_pressed('4') and left:   # m_top
+        if is_pressed('4') and left:   # m_top
             left = False
             key_bindings['2'] = [(2, +STEP)]
             key_bindings['3'] = [(2, -STEP)]
 
-        if keyboard.is_pressed('5') and left:   # all_top
+        if is_pressed('5') and left:   # all_top
             left = False
             key_bindings['2'] = [(0, +STEP), (1, +STEP), (2, +STEP)]
             key_bindings['3'] = [(0, -STEP), (1, -STEP), (2, -STEP)]
 
-        if keyboard.is_pressed('6') and right:  # l_bottom
+        if is_pressed('6') and right:  # l_bottom
             right = False
             key_bindings['6'] = [(5, +STEP)]
             key_bindings['7'] = [(5, -STEP)]
 
-        if keyboard.is_pressed('7') and right:  # r_bottom
+        if is_pressed('7') and right:  # r_bottom
             right = False
             key_bindings['6'] = [(4, +STEP)]
             key_bindings['7'] = [(4, -STEP)]
 
-        if keyboard.is_pressed('8') and right:  # m_bottom
+        if is_pressed('8') and right:  # m_bottom
             right = False
             key_bindings['6'] = [(6, +STEP)]
             key_bindings['7'] = [(6, -STEP)]
 
-        if keyboard.is_pressed('9') and right:  # all_bottom
+        if is_pressed('9') and right:  # all_bottom
             right = False
             key_bindings['6'] = [(4, +STEP), (5, +STEP), (6, +STEP)]
             key_bindings['7'] = [(4, -STEP), (5, -STEP), (6, -STEP)]
@@ -79,7 +97,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
             dict_ready = True
 
         # reset selection
-        if keyboard.is_pressed('-'):
+        if is_pressed('-'):
             key_bindings = {}
             dict_ready = False
             left = True
@@ -88,7 +106,7 @@ with mujoco.viewer.launch_passive(model, data) as viewer:
         if dict_ready:
             # check all keys each frame
             for key, bindings in key_bindings.items():
-                if keyboard.is_pressed(key):
+                if is_pressed(key):
                     for joint_id, delta in bindings:
                         data.ctrl[joint_id] = max(0, min(3.14, data.ctrl[joint_id] + delta))
 
